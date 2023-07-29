@@ -1,5 +1,11 @@
 from collections import defaultdict, deque
+import tkinter as tk
+from tkinter import scrolledtext
 
+output_gui = []
+output_head_list = []
+turn_num = 0
+curr_head = 0
 
 class Tape:
     # Constructor. Sets the blank symbol, the
@@ -29,12 +35,14 @@ class Tape:
     def writeSymbol(self, symbol):
         if self.head < len(self.symbols):
             self.symbols[self.head] = symbol
+
         else:
             self.symbols.append(symbol)
 
             # Moves the head left (-1), stay (0) or right (1)
 
     def moveHead(self, direction):
+        global curr_head
         if direction == 'L':
             inc = -1
         elif direction == 'R':
@@ -42,6 +50,8 @@ class Tape:
         else:
             inc = 0
         self.head += inc
+        curr_head = self.head
+        print(self.head)
 
         # Creates a new tape with the same attributes than this
 
@@ -68,8 +78,10 @@ class NDTM:
 
     # string into the first tape
     def restart(self, string):
+        global curr_head
         self.state = self.start
         self.tapes[0].loadString(string, 0)
+        curr_head = 0
         for tape in self.tapes[1:]:
             tape.loadString('', 0)
 
@@ -81,7 +93,6 @@ class NDTM:
         # Add an entry to the transaction table
 
     def addTrans(self, state, read_sym, new_state, moves):
-        print(state, read_sym, new_state, moves)
         self.trans[(state, read_sym)].append((new_state, moves))
 
         # Returns the transaction that corresponds to the
@@ -99,6 +110,27 @@ class NDTM:
             symbol, direction = move
             tape.writeSymbol(symbol)
             tape.moveHead(direction)
+
+        output_tape = str(self)
+        output_tape = output_tape.replace('[', '')
+        output_tape = output_tape.replace(']', '')
+        output_tape = output_tape.replace("'", '')
+        output_tape = output_tape.replace(',', '')
+
+        output_tape = output_tape.replace('\n', '')
+        output_tape = output_tape.replace(' ', '')
+        output_tape = output_tape.replace('#', ' ')
+        head_num = (len(self.state) + 1) + curr_head
+        output_head = output_tape[0:head_num] + 'V' + output_tape[head_num + 1:]
+
+        for idx, let in enumerate(output_head):
+            if let != 'V':
+                let = ' '
+                output_head = output_head[0:idx] + let + output_head[idx + 1: ]
+
+        output_gui.append(output_tape)
+        output_head_list.append(output_head)
+        print(output_head)
         return self
 
     # Returns a copy of the current TM
@@ -140,17 +172,17 @@ class NDTM:
         # Simple parser that builds a TM from a text file
 
     @staticmethod
-    def parse(filename):
+    def parse(input):
         tm = None
-        with open(filename) as file:
-            for line in file:
+        for line in input.split('\n'):
+
                 spec = line.strip()
                 if len(spec) == 0 or spec[0] == '%': continue
                 if tm is None:
+
                     start, final, blank, ntapes = spec.split()
                     ntapes = int(ntapes)
                     tm = NDTM(start, final, blank, ntapes)
-                    print(start, final, blank)
 
                 else:
                     fields = line.split(',')
@@ -164,17 +196,71 @@ class NDTM:
 
         return tm
 
+def display_text():
+    inp = entry.get("1.0",'end-1c')
+    num_inp = input_text.get("1.0",'end-1c')
+    tm = NDTM.parse(inp)
+    acc_tm = tm.accepts(num_inp)
+    label.config(text="Final String and State = " + str(output_gui[len(output_gui)-1]))
+
+def display_steps():
+    global turn_num
+    head_label.config(text=output_head_list[turn_num])
+    label.config(text=output_gui[turn_num])
+    if turn_num == len(output_gui) - 1:
+        label.config(text=output_gui[turn_num], fg="#008000")
+    turn_num += 1
+
+def reset():
+    global turn_num, output_gui, output_head_list
+    turn_num = 0
+    output_gui = []
+    output_head_list = []
+    label.config(text="", fg="#000000")
+    head_label.config(text="", fg="#000000")
+
 
 if __name__ == '__main__':
     # Example TM that performs unary complement
-    tm = NDTM('q0', 'q1', '#')
-    tm.addTrans('q0', ('1', ), 'q0', (('1', 'R'), ))
-    tm.addTrans('q0', ('0', ), 'q0', (('#', 'R'), ))
-    tm.addTrans('q0', ('#', ), 'q1', (('#', 'S'), ))
-    print(tm.accepts('11011101'))
-    acc_tm = tm.accepts('11011101')
+    window = tk.Tk()
+    window.geometry("1000x1000")
 
-    if acc_tm:
-        print(acc_tm)
-    else:
-        print(tm)
+    # Initialize a Label to display the User Input
+    head_label = tk.Label(window, text="", font=("Courier 22 bold"))
+    head_label.pack()
+    label = tk.Label(window, text="", font=("Courier 22 bold"))
+    label.pack()
+
+    sample_text = "% HEADER\n" \
+                  "q0 q1 # 1\n" \
+                  "% TRANSITIONS\n" \
+                  "q0,1,q0,1 R\n" \
+                  "q0,0,q0,# R\n" \
+                  "q0,#,q1,# S\n\n\n"\
+                  "% <current state>,<current input>,<new state>,<write symbol> <direction>"
+
+    sample_input = "11011101"
+
+    # Create an Entry widget to accept User Input
+    input_text_label = tk.Label(text="Input", font=("Courier 13"))
+    input_text = tk.Text(window, width=40, height=3, font=("Courier 13"))
+    input_text.insert(tk.END, sample_input)
+
+    machine_definition_label = tk.Label(text="Machine Definition", font=("Courier 13"))
+    entry = tk.Text(window, width=40, font=("Courier 13"))
+    entry.focus_set()
+
+    entry.insert(tk.END, sample_text)
+
+    input_text_label.pack(padx=30)
+    input_text.pack(expand=False, fill = "x",padx=30)
+    machine_definition_label.pack(padx=30)
+    entry.pack(expand=True, fill = tk.BOTH, padx=30, pady=10)
+
+    # Create a Button to validate Entry Widget
+    tk.Button(window, text="Compute", width=20, command=display_text).pack(pady=20, padx=40)
+
+    tk.Button(window, text="Next", width=20, command=display_steps).pack(pady=5, padx=40)
+    tk.Button(window, text="Reset", width=20, command=reset).pack(pady=20, padx=40)
+
+    window.mainloop()
