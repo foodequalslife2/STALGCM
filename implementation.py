@@ -1,8 +1,3 @@
-####
-# NDTM.py: a nondeterministic Turing Machine Simulator
-# Author: David Gil del Rosal (dgilros@yahoo.com)
-####
-
 from collections import defaultdict, deque
 
 
