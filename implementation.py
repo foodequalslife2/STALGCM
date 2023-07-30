@@ -6,24 +6,37 @@ output_gui = []
 output_head_list = []
 turn_num = 0
 curr_head = 0
+tree_num = 0
+tree_counter = 0
+
 
 class Tape:
     # Constructor. Sets the blank symbol, the
     # string to load and the position of the tape head
     def __init__(self, blank, string='', head=0):
+        global curr_head
         self.blank = blank
         self.loadString(string, head)
 
         # Loads a new string and sets the tape head
 
     def loadString(self, string, head):
+        global tree_num
+
         self.symbols = list(string)
         self.head = head
+
+        if self.symbols != []:
+            output_gui.append([])
+            output_head_list.append([])
+
+            tree_num += 1
 
         # Returns the symbol on the current cell, or the blank
 
     # if the head is on the start of the infinite blanks
     def readSymbol(self):
+
         if self.head < len(self.symbols):
             return self.symbols[self.head]
         else:
@@ -33,6 +46,7 @@ class Tape:
 
     # the list if necessary
     def writeSymbol(self, symbol):
+
         if self.head < len(self.symbols):
             self.symbols[self.head] = symbol
 
@@ -51,16 +65,22 @@ class Tape:
             inc = 0
         self.head += inc
         curr_head = self.head
-        print(self.head)
+
+
 
         # Creates a new tape with the same attributes than this
 
     def clone(self):
+        global curr_head, new_tree
+        curr_head = self.head
+        new_tree = True
         return Tape(self.blank, self.symbols, self.head)
 
         # String representation of the tape
 
     def __str__(self):
+        global curr_head
+        curr_head = self.head
         return str(self.symbols[:self.head]) + \
                str(self.symbols[self.head:])
 
@@ -78,10 +98,8 @@ class NDTM:
 
     # string into the first tape
     def restart(self, string):
-        global curr_head
         self.state = self.start
         self.tapes[0].loadString(string, 0)
-        curr_head = 0
         for tape in self.tapes[1:]:
             tape.loadString('', 0)
 
@@ -105,11 +123,9 @@ class NDTM:
     # Executes a transaction updating the state and the
     # tapes. Returns the TM object to allow chaining
     def execTrans(self, trans):
+        global curr_head, tree_counter
         self.state, moves = trans
-        for tape, move in zip(self.tapes, moves):
-            symbol, direction = move
-            tape.writeSymbol(symbol)
-            tape.moveHead(direction)
+
 
         output_tape = str(self)
         output_tape = output_tape.replace('[', '')
@@ -128,9 +144,21 @@ class NDTM:
                 let = ' '
                 output_head = output_head[0:idx] + let + output_head[idx + 1: ]
 
-        output_gui.append(output_tape)
-        output_head_list.append(output_head)
-        print(output_head)
+        if tree_counter < tree_num:
+
+            output_gui[tree_counter].append(output_tape)
+            output_head_list[tree_counter].append(output_head)
+            tree_counter += 1
+
+
+            if tree_counter == tree_num:
+                tree_counter = 0
+
+        for tape, move in zip(self.tapes, moves):
+            symbol, direction = move
+            tape.writeSymbol(symbol)
+            tape.moveHead(direction)
+
         return self
 
     # Returns a copy of the current TM
@@ -159,14 +187,18 @@ class NDTM:
                 # add replicas of the TM to the queue
                 for trans in transitions[1:]:
                     queue.append(tm.clone().execTrans(trans))
+
                     # execute the current transition
                 queue.append(tm.execTrans(transitions[0]))
+
         return None
 
     def __str__(self):
         out = ''
         for tape in self.tapes:
             out += self.state + ': ' + str(tape) + '\n'
+
+
         return out
 
         # Simple parser that builds a TM from a text file
@@ -197,27 +229,51 @@ class NDTM:
         return tm
 
 def display_text():
-    inp = entry.get("1.0",'end-1c')
-    num_inp = input_text.get("1.0",'end-1c')
-    tm = NDTM.parse(inp)
-    acc_tm = tm.accepts(num_inp)
-    label.config(text="Final String and State = " + str(output_gui[len(output_gui)-1]))
+        global tree_counter
+
+        inp = entry.get("1.0",'end-1c')
+        num_inp = input_text.get("1.0",'end-1c')
+
+
+        tm = NDTM.parse(inp)
+        acc_tm = tm.accepts(num_inp)
+        label.config(text="Final String and State = ")
+        tree_counter = 0
+        steps_btn['state'] = tk.NORMAL
+        reset_btn['state'] = tk.NORMAL
+        compute_btn['state'] = tk.DISABLED
+
+
 
 def display_steps():
-    global turn_num
-    head_label.config(text=output_head_list[turn_num])
-    label.config(text=output_gui[turn_num])
-    if turn_num == len(output_gui) - 1:
-        label.config(text=output_gui[turn_num], fg="#008000")
-    turn_num += 1
+        global turn_num, tree_counter
+        list_len = 0
+
+        head_label.config(text=output_head_list[tree_counter][turn_num])
+        label.config(text=output_gui[tree_counter][turn_num])
+        turn_num += 1
+
+        for item in output_gui[tree_counter]:
+            list_len += 1
+
+        if turn_num == list_len:
+            tree_counter += 1
+            turn_num = 0
+
 
 def reset():
-    global turn_num, output_gui, output_head_list
+    global turn_num, output_gui, output_head_list, curr_head, tree_counter,tree_num
     turn_num = 0
+    tree_counter = 0
+    tree_num = 0
     output_gui = []
     output_head_list = []
+    curr_head = 0
     label.config(text="", fg="#000000")
     head_label.config(text="", fg="#000000")
+    steps_btn['state'] = tk.DISABLED
+    reset_btn['state'] = tk.DISABLED
+    compute_btn['state'] = tk.NORMAL
 
 
 if __name__ == '__main__':
@@ -258,9 +314,12 @@ if __name__ == '__main__':
     entry.pack(expand=True, fill = tk.BOTH, padx=30, pady=10)
 
     # Create a Button to validate Entry Widget
-    tk.Button(window, text="Compute", width=20, command=display_text).pack(pady=20, padx=40)
+    compute_btn = tk.Button(window, text="Compute", width=20, command=display_text)
+    compute_btn.pack(pady=20, padx=40)
 
-    tk.Button(window, text="Next", width=20, command=display_steps).pack(pady=5, padx=40)
-    tk.Button(window, text="Reset", width=20, command=reset).pack(pady=20, padx=40)
+    steps_btn = tk.Button(window, text="Next", width=20, command=display_steps, state= tk.DISABLED)
+    steps_btn.pack(pady=5, padx=40)
+    reset_btn = tk.Button(window, text="Reset", width=20, command=reset, state= tk.DISABLED)
+    reset_btn.pack(pady=20, padx=40)
 
     window.mainloop()
