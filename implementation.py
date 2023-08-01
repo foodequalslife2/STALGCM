@@ -8,6 +8,7 @@ turn_num = 0
 curr_head = 0
 tree_num = 0
 tree_counter = 0
+is_last_tree = False
 
 
 class Tape:
@@ -229,7 +230,7 @@ class NDTM:
         return tm
 
 def display_text():
-        global tree_counter
+        global tree_counter, is_last_tree
 
         inp = entry.get("1.0",'end-1c')
         num_inp = input_text.get("1.0",'end-1c')
@@ -242,6 +243,12 @@ def display_text():
         steps_btn['state'] = tk.NORMAL
         reset_btn['state'] = tk.NORMAL
         compute_btn['state'] = tk.DISABLED
+
+        if tree_num > 1:
+            next_tree_btn['state'] = tk.NORMAL
+            accepted_tree_btn['state'] = tk.NORMAL
+        else:
+            is_last_tree = True
 
 
 
@@ -257,29 +264,74 @@ def display_steps():
             list_len += 1
 
         if turn_num == list_len:
-            tree_counter += 1
+            if is_last_tree == True:
+                label.config(text=output_gui[tree_counter][turn_num-1], fg="#008000")
+
+            steps_btn['state'] = tk.DISABLED
             turn_num = 0
 
 
+
+
 def reset():
-    global turn_num, output_gui, output_head_list, curr_head, tree_counter,tree_num
+    global turn_num, output_gui, output_head_list, curr_head, tree_counter,tree_num, is_last_tree
     turn_num = 0
     tree_counter = 0
     tree_num = 0
     output_gui = []
     output_head_list = []
     curr_head = 0
+    is_last_tree = False
     label.config(text="", fg="#000000")
     head_label.config(text="", fg="#000000")
     steps_btn['state'] = tk.DISABLED
     reset_btn['state'] = tk.DISABLED
     compute_btn['state'] = tk.NORMAL
+    next_tree_btn['state'] = tk.DISABLED
+    accepted_tree_btn['state'] = tk.DISABLED
+
+def next_tree():
+    global tree_counter, turn_num, is_last_tree
+    num_of_trees = 0
+
+    tree_counter += 1
+    turn_num = 0
+    steps_btn['state'] = tk.NORMAL
+
+    head_label.config(text=output_head_list[tree_counter][turn_num])
+    label.config(text=output_gui[tree_counter][turn_num])
+
+    for item in output_gui:
+        if item != []:
+            num_of_trees += 1
+
+    if tree_counter == num_of_trees - 1:
+        next_tree_btn['state'] = tk.DISABLED
+        is_last_tree = True
+
+def accepted_tree():
+    global tree_counter, turn_num, is_last_tree
+    num_of_trees = 0
+    is_last_tree = True
+
+    for item in output_gui:
+        if item != []:
+            num_of_trees += 1
+
+    tree_counter = num_of_trees -1
+    turn_num = 0
+    steps_btn['state'] = tk.NORMAL
+    next_tree_btn['state'] = tk.DISABLED
+    accepted_tree_btn['state'] = tk.DISABLED
+
+    head_label.config(text=output_head_list[tree_counter][turn_num])
+    label.config(text=output_gui[tree_counter][turn_num])
 
 
 if __name__ == '__main__':
     # Example TM that performs unary complement
     window = tk.Tk()
-    window.geometry("1000x1000")
+    window.geometry("1200x1000")
 
     # Initialize a Label to display the User Input
     head_label = tk.Label(window, text="", font=("Courier 22 bold"))
@@ -315,11 +367,18 @@ if __name__ == '__main__':
 
     # Create a Button to validate Entry Widget
     compute_btn = tk.Button(window, text="Compute", width=20, command=display_text)
-    compute_btn.pack(pady=20, padx=40)
+    compute_btn.pack(pady=20, padx=40, side=tk.LEFT)
 
     steps_btn = tk.Button(window, text="Next", width=20, command=display_steps, state= tk.DISABLED)
-    steps_btn.pack(pady=5, padx=40)
+
+    steps_btn.pack(pady=20, padx=40, side= tk.LEFT)
     reset_btn = tk.Button(window, text="Reset", width=20, command=reset, state= tk.DISABLED)
-    reset_btn.pack(pady=20, padx=40)
+    reset_btn.pack(pady=20, padx=40, side=tk.RIGHT)
+
+
+    next_tree_btn = tk.Button(window, text="Next Tree", width=20, command=next_tree, state= tk.DISABLED)
+    next_tree_btn.pack(pady=20, padx=40, side=tk.LEFT)
+    accepted_tree_btn = tk.Button(window, text="Accepted Tree", width=20, command=accepted_tree, state=tk.DISABLED)
+    accepted_tree_btn.pack(pady=20, padx=40, side=tk.LEFT)
 
     window.mainloop()
