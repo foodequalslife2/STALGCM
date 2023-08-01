@@ -1,14 +1,21 @@
 from collections import defaultdict, deque
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import filedialog
 
 output_gui = []
 output_head_list = []
 turn_num = 0
 curr_head = 0
-tree_num = 0
-tree_counter = 0
-is_last_tree = False
+branch_num = 0
+branch_counter = 0
+is_last_branch = False
+machine_definition = "% HEADER\n" \
+                  "q0 q1 # 1\n" \
+                  "% TRANSITIONS\n" \
+                  "q0,1,q0,1 R\n" \
+                  "q0,0,q0,# R\n" \
+                  "q0,#,q1,# S\n\n\n"\
+                  "% <current state>,<current input>,<new state>,<write symbol> <direction>"
 
 
 class Tape:
@@ -22,7 +29,7 @@ class Tape:
         # Loads a new string and sets the tape head
 
     def loadString(self, string, head):
-        global tree_num
+        global branch_num
 
         self.symbols = list(string)
         self.head = head
@@ -31,7 +38,7 @@ class Tape:
             output_gui.append([])
             output_head_list.append([])
 
-            tree_num += 1
+            branch_num += 1
 
         # Returns the symbol on the current cell, or the blank
 
@@ -72,9 +79,9 @@ class Tape:
         # Creates a new tape with the same attributes than this
 
     def clone(self):
-        global curr_head, new_tree
+        global curr_head, new_branch
         curr_head = self.head
-        new_tree = True
+        new_branch = True
         return Tape(self.blank, self.symbols, self.head)
 
         # String representation of the tape
@@ -124,7 +131,7 @@ class NDTM:
     # Executes a transaction updating the state and the
     # tapes. Returns the TM object to allow chaining
     def execTrans(self, trans):
-        global curr_head, tree_counter
+        global curr_head, branch_counter
         self.state, moves = trans
 
 
@@ -145,15 +152,15 @@ class NDTM:
                 let = ' '
                 output_head = output_head[0:idx] + let + output_head[idx + 1: ]
 
-        if tree_counter < tree_num:
+        if branch_counter < branch_num:
 
-            output_gui[tree_counter].append(output_tape)
-            output_head_list[tree_counter].append(output_head)
-            tree_counter += 1
+            output_gui[branch_counter].append(output_tape)
+            output_head_list[branch_counter].append(output_head)
+            branch_counter += 1
 
 
-            if tree_counter == tree_num:
-                tree_counter = 0
+            if branch_counter == branch_num:
+                branch_counter = 0
 
         for tape, move in zip(self.tapes, moves):
             symbol, direction = move
@@ -230,42 +237,41 @@ class NDTM:
         return tm
 
 def display_text():
-        global tree_counter, is_last_tree
+        global branch_counter, is_last_branch
 
-        inp = entry.get("1.0",'end-1c')
         num_inp = input_text.get("1.0",'end-1c')
 
 
-        tm = NDTM.parse(inp)
+        tm = NDTM.parse(machine_definition)
         acc_tm = tm.accepts(num_inp)
         label.config(text="Final String and State = ")
-        tree_counter = 0
+        branch_counter = 0
         steps_btn['state'] = tk.NORMAL
         reset_btn['state'] = tk.NORMAL
         compute_btn['state'] = tk.DISABLED
 
-        if tree_num > 1:
-            next_tree_btn['state'] = tk.NORMAL
-            accepted_tree_btn['state'] = tk.NORMAL
+        if branch_num > 1:
+            next_branch_btn['state'] = tk.NORMAL
+            accepted_branch_btn['state'] = tk.NORMAL
         else:
-            is_last_tree = True
+            is_last_branch = True
 
 
 
 def display_steps():
-        global turn_num, tree_counter
+        global turn_num, branch_counter
         list_len = 0
 
-        head_label.config(text=output_head_list[tree_counter][turn_num])
-        label.config(text=output_gui[tree_counter][turn_num])
+        head_label.config(text=output_head_list[branch_counter][turn_num])
+        label.config(text=output_gui[branch_counter][turn_num])
         turn_num += 1
 
-        for item in output_gui[tree_counter]:
+        for item in output_gui[branch_counter]:
             list_len += 1
 
         if turn_num == list_len:
-            if is_last_tree == True:
-                label.config(text=output_gui[tree_counter][turn_num-1], fg="#008000")
+            if is_last_branch == True:
+                label.config(text=output_gui[branch_counter][turn_num-1], fg="#008000")
 
             steps_btn['state'] = tk.DISABLED
             turn_num = 0
@@ -274,58 +280,75 @@ def display_steps():
 
 
 def reset():
-    global turn_num, output_gui, output_head_list, curr_head, tree_counter,tree_num, is_last_tree
+    global turn_num, output_gui, output_head_list, curr_head, branch_counter,branch_num, is_last_branch
     turn_num = 0
-    tree_counter = 0
-    tree_num = 0
+    branch_counter = 0
+    branch_num = 0
     output_gui = []
     output_head_list = []
     curr_head = 0
-    is_last_tree = False
+    is_last_branch = False
     label.config(text="", fg="#000000")
     head_label.config(text="", fg="#000000")
     steps_btn['state'] = tk.DISABLED
     reset_btn['state'] = tk.DISABLED
     compute_btn['state'] = tk.NORMAL
-    next_tree_btn['state'] = tk.DISABLED
-    accepted_tree_btn['state'] = tk.DISABLED
+    next_branch_btn['state'] = tk.DISABLED
+    accepted_branch_btn['state'] = tk.DISABLED
 
-def next_tree():
-    global tree_counter, turn_num, is_last_tree
-    num_of_trees = 0
+def next_branch():
+    global branch_counter, turn_num, is_last_branch
+    num_of_branches = 0
 
-    tree_counter += 1
+    branch_counter += 1
     turn_num = 0
     steps_btn['state'] = tk.NORMAL
 
-    head_label.config(text=output_head_list[tree_counter][turn_num])
-    label.config(text=output_gui[tree_counter][turn_num])
+    head_label.config(text=output_head_list[branch_counter][turn_num])
+    label.config(text=output_gui[branch_counter][turn_num])
 
     for item in output_gui:
         if item != []:
-            num_of_trees += 1
+            num_of_branches += 1
 
-    if tree_counter == num_of_trees - 1:
-        next_tree_btn['state'] = tk.DISABLED
-        is_last_tree = True
+    if branch_counter == num_of_branches - 1:
+        next_branch_btn['state'] = tk.DISABLED
+        accepted_branch_btn['state'] = tk.DISABLED
+        is_last_branch = True
 
-def accepted_tree():
-    global tree_counter, turn_num, is_last_tree
-    num_of_trees = 0
-    is_last_tree = True
+def accepted_branch():
+    global branch_counter, turn_num, is_last_branch
+    num_of_branches = 0
+    is_last_branch = True
 
     for item in output_gui:
         if item != []:
-            num_of_trees += 1
+            num_of_branches += 1
 
-    tree_counter = num_of_trees -1
+
+    branch_counter = num_of_branches - 1
     turn_num = 0
     steps_btn['state'] = tk.NORMAL
-    next_tree_btn['state'] = tk.DISABLED
-    accepted_tree_btn['state'] = tk.DISABLED
+    next_branch_btn['state'] = tk.DISABLED
+    accepted_branch_btn['state'] = tk.DISABLED
 
-    head_label.config(text=output_head_list[tree_counter][turn_num])
-    label.config(text=output_gui[tree_counter][turn_num])
+    head_label.config(text=output_head_list[branch_counter][turn_num])
+    label.config(text=output_gui[branch_counter][turn_num])
+
+
+def browseFiles():
+    global machine_definition
+    filename = filedialog.askopenfilename(initialdir="/",
+                                          title="Select a File",
+                                          filetypes=(("Text files",
+                                                      "*.txt*"),
+                                                     ("TM files",
+                                                      "*.tm*")))
+    tf = open(filename)  # or tf = open(tf, 'r')
+    machine_definition = tf.read()
+    tf.close()
+
+    file_label.config(text="File Opened: "+filename)
 
 
 if __name__ == '__main__':
@@ -355,16 +378,41 @@ if __name__ == '__main__':
     input_text.insert(tk.END, sample_input)
 
     machine_definition_label = tk.Label(text="Machine Definition", font=("Courier 13"))
-    entry = tk.Text(window, width=40, font=("Courier 13"))
-    entry.focus_set()
-
-    entry.insert(tk.END, sample_text)
 
     input_text_label.pack(padx=30)
     input_text.pack(expand=False, fill = "x",padx=30)
     machine_definition_label.pack(padx=30)
-    entry.pack(expand=True, fill = tk.BOTH, padx=30, pady=10)
 
+    file_label = tk.Label(window,
+                                text="File Explorer using Tkinter",
+                                width=100, height=4,
+                                fg="blue")
+
+    file_label.pack()
+    file_btn = tk.Button(window,
+                        text = "Browse Files",
+                        command = browseFiles)
+
+    file_btn.pack()
+
+    instructions_text = tk.Label(text="INSTRUCTIONS\n\n"
+                                      "<Compute> - Computes your designated input with the machine file you submitted\n"
+                                      "<Next> - Proceeds to the next step of the current configuration branch\n"
+                                      "<Next Branch> - Proceeds to the next computed branch (for nondeterministic machines only)\n"
+                                      "<Accepted Branch> - Skips to the accepted branch (for nondeterministic machines only)\n"
+                                      "<Reset> - Resets the program (Must be pressed first before computing for another machine and/or input)\n\n\n"
+                                      "NOTE: Due to the nondeterministic nature of the machine, there may be multiple accepted branches.\n"
+                                      "This program computes all the branches of the same level in the tree, simultaneously,\n"
+                                      "and stops when a branch/branches in a level have reached an accepting state.\n"
+                                      "It is completely possible to have multiple accepted branches, but for the purpose of this program,\n"
+                                      "only the last branch will turn green.\n\n"
+                                      "It is also important to note that the 'Accepted Branch' may only contain a portion of the steps\n"
+                                      "computed to get to the accepted state. This is because it is possible that the 'Accepted Branch'\n"
+                                      "is a sub-branch of another branch, and has diverged from the list of branches of the program,\n"
+                                      "generating a different set of branches, which exludes the previous steps computed.",
+                                 font=("Courier 12"), fg="#6F6F6F")
+
+    instructions_text.pack(pady=20)
     # Create a Button to validate Entry Widget
     compute_btn = tk.Button(window, text="Compute", width=20, command=display_text)
     compute_btn.pack(pady=20, padx=40, side=tk.LEFT)
@@ -376,9 +424,9 @@ if __name__ == '__main__':
     reset_btn.pack(pady=20, padx=40, side=tk.RIGHT)
 
 
-    next_tree_btn = tk.Button(window, text="Next Tree", width=20, command=next_tree, state= tk.DISABLED)
-    next_tree_btn.pack(pady=20, padx=40, side=tk.LEFT)
-    accepted_tree_btn = tk.Button(window, text="Accepted Tree", width=20, command=accepted_tree, state=tk.DISABLED)
-    accepted_tree_btn.pack(pady=20, padx=40, side=tk.LEFT)
+    next_branch_btn = tk.Button(window, text="Next Branch", width=20, command=next_branch, state= tk.DISABLED)
+    next_branch_btn.pack(pady=20, padx=40, side=tk.LEFT)
+    accepted_branch_btn = tk.Button(window, text="Accepted Branch", width=20, command=accepted_branch, state=tk.DISABLED)
+    accepted_branch_btn.pack(pady=20, padx=40, side=tk.LEFT)
 
     window.mainloop()
