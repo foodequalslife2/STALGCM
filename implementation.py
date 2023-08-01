@@ -143,7 +143,6 @@ class NDTM:
 
         output_tape = output_tape.replace('\n', '')
         output_tape = output_tape.replace(' ', '')
-        output_tape = output_tape.replace('#', ' ')
         head_num = (len(self.state) + 1) + curr_head
         output_head = output_tape[0:head_num] + 'V' + output_tape[head_num + 1:]
 
@@ -238,23 +237,40 @@ class NDTM:
 
 def display_text():
         global branch_counter, is_last_branch
+        num_of_branches = 0
+        list_len = 0
 
         num_inp = input_text.get("1.0",'end-1c')
 
 
         tm = NDTM.parse(machine_definition)
         acc_tm = tm.accepts(num_inp)
-        label.config(text="Final String and State = ")
-        branch_counter = 0
-        steps_btn['state'] = tk.NORMAL
-        reset_btn['state'] = tk.NORMAL
-        compute_btn['state'] = tk.DISABLED
 
-        if branch_num > 1:
-            next_branch_btn['state'] = tk.NORMAL
-            accepted_branch_btn['state'] = tk.NORMAL
+        if acc_tm:
+            branch_counter = 0
+            steps_btn['state'] = tk.NORMAL
+            reset_btn['state'] = tk.NORMAL
+            compute_btn['state'] = tk.DISABLED
+
+            for item in output_gui:
+                if item != []:
+                    num_of_branches += 1
+
+            for item in output_gui[num_of_branches-1]:
+                list_len += 1
+
+            label.config(text="Final String and State = "+ output_gui[num_of_branches-1][list_len-1]+ " (ACCEPTED)", fg="#008000")
+            if branch_num > 1:
+                next_branch_btn['state'] = tk.NORMAL
+                accepted_branch_btn['state'] = tk.NORMAL
+            else:
+                is_last_branch = True
         else:
-            is_last_branch = True
+            label.config(
+                text="REJECTED",
+                fg="#FF0000")
+            reset_btn['state'] = tk.NORMAL
+            compute_btn['state'] = tk.DISABLED
 
 
 
@@ -263,7 +279,7 @@ def display_steps():
         list_len = 0
 
         head_label.config(text=output_head_list[branch_counter][turn_num])
-        label.config(text=output_gui[branch_counter][turn_num])
+        label.config(text=output_gui[branch_counter][turn_num], fg="#000000")
         turn_num += 1
 
         for item in output_gui[branch_counter]:
@@ -362,14 +378,6 @@ if __name__ == '__main__':
     label = tk.Label(window, text="", font=("Courier 22 bold"))
     label.pack()
 
-    sample_text = "% HEADER\n" \
-                  "q0 q1 # 1\n" \
-                  "% TRANSITIONS\n" \
-                  "q0,1,q0,1 R\n" \
-                  "q0,0,q0,# R\n" \
-                  "q0,#,q1,# S\n\n\n"\
-                  "% <current state>,<current input>,<new state>,<write symbol> <direction>"
-
     sample_input = "11011101"
 
     # Create an Entry widget to accept User Input
@@ -409,11 +417,14 @@ if __name__ == '__main__':
                                       "It is also important to note that the 'Accepted Branch' may only contain a portion of the steps\n"
                                       "computed to get to the accepted state. This is because it is possible that the 'Accepted Branch'\n"
                                       "is a sub-branch of another branch, and has diverged from the list of branches of the program,\n"
-                                      "generating a different set of branches, which exludes the previous steps computed.",
+                                      "generating a different set of branches, which exludes the previous steps computed.\n\n"
+                                      "You can test out the program right away by computing without changing the input and\n"
+                                      "without adding a file. There is currently a sample machine stored that removes all 0's\n"
+                                      "of an input string of the language - (0 U 1)*",
                                  font=("Courier 12"), fg="#6F6F6F")
 
     instructions_text.pack(pady=20)
-    # Create a Button to validate Entry Widget
+
     compute_btn = tk.Button(window, text="Compute", width=20, command=display_text)
     compute_btn.pack(pady=20, padx=40, side=tk.LEFT)
 
