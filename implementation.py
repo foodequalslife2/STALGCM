@@ -19,14 +19,13 @@ machine_definition = "% HEADER\n" \
 
 
 class Tape:
-    # Constructor. Sets the blank symbol, the
-    # string to load and the position of the tape head
+
     def __init__(self, blank, string='', head=0):
         global curr_head
         self.blank = blank
         self.loadString(string, head)
 
-        # Loads a new string and sets the tape head
+
 
     def loadString(self, string, head):
         global branch_num
@@ -40,9 +39,7 @@ class Tape:
 
             branch_num += 1
 
-        # Returns the symbol on the current cell, or the blank
 
-    # if the head is on the start of the infinite blanks
     def readSymbol(self):
 
         if self.head < len(self.symbols):
@@ -50,9 +47,6 @@ class Tape:
         else:
             return self.blank
 
-            # Writes a symbol in the current cell, extending
-
-    # the list if necessary
     def writeSymbol(self, symbol):
 
         if self.head < len(self.symbols):
@@ -61,7 +55,7 @@ class Tape:
         else:
             self.symbols.append(symbol)
 
-            # Moves the head left (-1), stay (0) or right (1)
+
 
     def moveHead(self, direction):
         global curr_head
@@ -76,7 +70,6 @@ class Tape:
 
 
 
-        # Creates a new tape with the same attributes than this
 
     def clone(self):
         global curr_head, new_branch
@@ -84,7 +77,7 @@ class Tape:
         new_branch = True
         return Tape(self.blank, self.symbols, self.head)
 
-        # String representation of the tape
+
 
     def __str__(self):
         global curr_head
@@ -94,42 +87,34 @@ class Tape:
 
 
 class NDTM:
-    # Constructor. Sets the start and final states and
-    # inits the TM tapes
+
     def __init__(self, start, final, blank='#', ntapes=1):
         self.start = self.state = start
         self.final = final
         self.tapes = [Tape(blank) for _ in range(ntapes)]
         self.trans = defaultdict(list)
 
-        # Puts the TM in the start state and loads an input
 
-    # string into the first tape
     def restart(self, string):
         self.state = self.start
         self.tapes[0].loadString(string, 0)
         for tape in self.tapes[1:]:
             tape.loadString('', 0)
 
-            # Returns a tuple with the current symbols read
 
     def readSymbols(self):
         return tuple(tape.readSymbol() for tape in self.tapes)
 
-        # Add an entry to the transaction table
 
     def addTrans(self, state, read_sym, new_state, moves):
         self.trans[(state, read_sym)].append((new_state, moves))
 
-        # Returns the transaction that corresponds to the
 
-    # current state & read symbols, or None if there is not
     def getTrans(self):
         key = (self.state, self.readSymbols())
         return self.trans[key] if key in self.trans else None
 
-    # Executes a transaction updating the state and the
-    # tapes. Returns the TM object to allow chaining
+
     def execTrans(self, trans):
         global curr_head, branch_counter
         self.state, moves = trans
@@ -168,7 +153,6 @@ class NDTM:
 
         return self
 
-    # Returns a copy of the current TM
     def clone(self):
         tm = NDTM(self.start, self.final)
         tm.state = self.state
@@ -176,9 +160,7 @@ class NDTM:
         tm.trans = self.trans  # shallow copy
         return tm
 
-        # Simulates the TM computation. Returns the TM that
 
-    # accepted the input string if any, or None.
     def accepts(self, string):
         self.restart(string)
         queue = deque([self])
@@ -186,16 +168,14 @@ class NDTM:
             tm = queue.popleft()
             transitions = tm.getTrans()
             if transitions is None:
-                # there are not transactions. Exit
-                # if the TM is in the final state
+
                 if tm.state == tm.final: return tm
             else:
-                # If the transaction is not deterministic
-                # add replicas of the TM to the queue
+
                 for trans in transitions[1:]:
                     queue.append(tm.clone().execTrans(trans))
 
-                    # execute the current transition
+
                 queue.append(tm.execTrans(transitions[0]))
 
         return None
@@ -208,7 +188,7 @@ class NDTM:
 
         return out
 
-        # Simple parser that builds a TM from a text file
+
 
     @staticmethod
     def parse(input):
@@ -360,7 +340,7 @@ def browseFiles():
                                                       "*.txt*"),
                                                      ("TM files",
                                                       "*.tm*")))
-    tf = open(filename)  # or tf = open(tf, 'r')
+    tf = open(filename)
     machine_definition = tf.read()
     tf.close()
 
@@ -368,11 +348,11 @@ def browseFiles():
 
 
 if __name__ == '__main__':
-    # Example TM that performs unary complement
+
     window = tk.Tk()
     window.geometry("1200x1000")
 
-    # Initialize a Label to display the User Input
+
     head_label = tk.Label(window, text="", font=("Courier 22 bold"))
     head_label.pack()
     label = tk.Label(window, text="", font=("Courier 22 bold"))
@@ -380,7 +360,7 @@ if __name__ == '__main__':
 
     sample_input = "11011101"
 
-    # Create an Entry widget to accept User Input
+
     input_text_label = tk.Label(text="Input", font=("Courier 13"))
     input_text = tk.Text(window, width=40, height=3, font=("Courier 13"))
     input_text.insert(tk.END, sample_input)
