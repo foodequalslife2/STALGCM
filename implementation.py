@@ -2,6 +2,7 @@ from collections import defaultdict, deque
 import tkinter as tk
 from tkinter import filedialog
 
+
 output_gui = []
 output_head_list = []
 turn_num = 0
@@ -16,6 +17,7 @@ machine_definition = "% HEADER\n" \
                   "q0,0,q0,# R\n" \
                   "q0,#,q1,# S\n\n\n"\
                   "% <current state>,<current input>,<new state>,<write symbol> <direction>"
+
 
 
 class Tape:
@@ -157,14 +159,16 @@ class NDTM:
         tm = NDTM(self.start, self.final)
         tm.state = self.state
         tm.tapes = [tape.clone() for tape in self.tapes]
-        tm.trans = self.trans  # shallow copy
+        tm.trans = self.trans
         return tm
 
 
     def accepts(self, string):
         self.restart(string)
         queue = deque([self])
+        counter = 0
         while len(queue) > 0:
+            counter += 1
             tm = queue.popleft()
             transitions = tm.getTrans()
             if transitions is None:
@@ -177,6 +181,9 @@ class NDTM:
 
 
                 queue.append(tm.execTrans(transitions[0]))
+
+            if counter == 50000:
+                return None
 
         return None
 
@@ -221,7 +228,6 @@ def display_text():
         list_len = 0
 
         num_inp = input_text.get("1.0",'end-1c')
-
 
         tm = NDTM.parse(machine_definition)
         acc_tm = tm.accepts(num_inp)
@@ -372,7 +378,7 @@ if __name__ == '__main__':
     machine_definition_label.pack(padx=30)
 
     file_label = tk.Label(window,
-                                text="File Explorer using Tkinter",
+                                text="Upload your machine file here",
                                 width=100, height=4,
                                 fg="blue")
 
