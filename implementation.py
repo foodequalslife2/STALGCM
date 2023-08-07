@@ -460,11 +460,11 @@ if __name__ == '__main__':
                                       "This program computes all the branches of the same level in the tree, simultaneously,\n"
                                       "and stops when a branch/branches in a level have reached an accepting state.\n"
                                       "It is completely possible to have multiple accepted branches, but for the purpose of this program,\n"
-                                      "only the last branch will turn green.\n\n"
+                                      "only the first branch that gets accepted will appear.\n\n"
                                       "It is also important to note that the 'Accepted Branch' may only contain a portion of the steps\n"
                                       "computed to get to the accepted state. This is because it is possible that the 'Accepted Branch'\n"
                                       "is a sub-branch of another branch, and has diverged from the list of branches of the program,\n"
-                                      "generating a different set of branches, which exludes the previous steps computed.\n\n"
+                                      "which inevitably excludes the previous steps computed.\n\n"
                                       "You can test out the program right away by computing without changing the input and\n"
                                       "without adding a file. There is currently a sample machine stored that removes all 0's\n"
                                       "of an input string of the language - (0 U 1)*",
