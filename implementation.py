@@ -1,3 +1,7 @@
+# Nondeterministic Turing Machine Simulator
+# By: Edric Chua, Carlos Guanzon, Priscilla Licup
+# S11
+
 from collections import defaultdict, deque
 import tkinter as tk
 from tkinter import filedialog

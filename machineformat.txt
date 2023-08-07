@@ -1,3 +1,5 @@
+% Machine Format for Chua, Guanzon, & Licup's Program
+
 q0 q1 #
 q0,1,q0,1 R
 q0,0,q0,# R
