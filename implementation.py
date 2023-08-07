@@ -9,9 +9,11 @@ turn_num = 0
 curr_head = 0
 branch_num = 0
 branch_counter = 0
+final_state = ""
+accepted_branch_num = 0
 is_last_branch = False
 machine_definition = "% HEADER\n" \
-                  "q0 q1 # 1\n" \
+                  "q0 q1 #\n" \
                   "% TRANSITIONS\n" \
                   "q0,1,q0,1 R\n" \
                   "q0,0,q0,# R\n" \
@@ -119,9 +121,6 @@ class NDTM:
 
     def execTrans(self, trans):
         global curr_head, branch_counter
-        self.state, moves = trans
-
-
         output_tape = str(self)
         output_tape = output_tape.replace('[', '')
         output_tape = output_tape.replace(']', '')
@@ -142,16 +141,42 @@ class NDTM:
 
             output_gui[branch_counter].append(output_tape)
             output_head_list[branch_counter].append(output_head)
-            branch_counter += 1
+
+        self.state, moves = trans
 
 
-            if branch_counter == branch_num:
-                branch_counter = 0
+
 
         for tape, move in zip(self.tapes, moves):
             symbol, direction = move
             tape.writeSymbol(symbol)
             tape.moveHead(direction)
+
+        output_tape = str(self)
+        output_tape = output_tape.replace('[', '')
+        output_tape = output_tape.replace(']', '')
+        output_tape = output_tape.replace("'", '')
+        output_tape = output_tape.replace(',', '')
+
+        output_tape = output_tape.replace('\n', '')
+        output_tape = output_tape.replace(' ', '')
+        head_num = (len(self.state) + 1) + curr_head
+        output_head = output_tape[0:head_num] + 'V' + output_tape[head_num + 1:]
+
+        for idx, let in enumerate(output_head):
+            if let != 'V':
+                let = ' '
+                output_head = output_head[0:idx] + let + output_head[idx + 1:]
+
+        if branch_counter < branch_num:
+
+            output_gui[branch_counter].append(output_tape)
+            output_head_list[branch_counter].append(output_head)
+            branch_counter += 1
+
+
+            if branch_counter == branch_num:
+                branch_counter = 0
 
         return self
 
@@ -183,7 +208,7 @@ class NDTM:
                 queue.append(tm.execTrans(transitions[0]))
 
             if counter == 50000:
-                return None
+                return "Non-Termination"
 
         return None
 
@@ -199,6 +224,7 @@ class NDTM:
 
     @staticmethod
     def parse(input):
+        global final_state
         tm = None
         for line in input.split('\n'):
 
@@ -206,9 +232,9 @@ class NDTM:
                 if len(spec) == 0 or spec[0] == '%': continue
                 if tm is None:
 
-                    start, final, blank, ntapes = spec.split()
-                    ntapes = int(ntapes)
-                    tm = NDTM(start, final, blank, ntapes)
+                    start, final, blank = spec.split()
+                    final_state = final
+                    tm = NDTM(start, final, blank)
 
                 else:
                     fields = line.split(',')
@@ -223,7 +249,7 @@ class NDTM:
         return tm
 
 def display_text():
-        global branch_counter, is_last_branch
+        global branch_counter, is_last_branch, accepted_branch_num
         num_of_branches = 0
         list_len = 0
 
@@ -232,25 +258,52 @@ def display_text():
         tm = NDTM.parse(machine_definition)
         acc_tm = tm.accepts(num_inp)
 
-        if acc_tm:
+
+        if acc_tm == "Non-Termination":
+            label.config(
+                text="Non-Termination",
+                fg="#FF0000")
+            reset_btn['state'] = tk.NORMAL
+            compute_btn['state'] = tk.DISABLED
+        elif acc_tm:
             branch_counter = 0
-            steps_btn['state'] = tk.NORMAL
+
             reset_btn['state'] = tk.NORMAL
             compute_btn['state'] = tk.DISABLED
 
-            for item in output_gui:
+
+
+            for idx, item in enumerate(output_gui):
                 if item != []:
+
                     num_of_branches += 1
+                    temp_result = [i for i in item if i.startswith(final_state)]
+                    if temp_result != []:
+                        final_result = temp_result
+                        final_result = str(final_result)
+                        final_result = final_result.replace('[', '')
+                        final_result = final_result.replace(']', '')
+                        final_result = final_result.replace("'", '')
+                        final_result = final_result.replace(',', '')
 
-            for item in output_gui[num_of_branches-1]:
-                list_len += 1
+                        final_result = final_result.replace('\n', '')
+                        final_result = final_result.replace(' ', '')
+                        accepted_branch_num = idx
 
-            label.config(text="Final String and State = "+ output_gui[num_of_branches-1][list_len-1]+ " (ACCEPTED)", fg="#008000")
-            if branch_num > 1:
-                next_branch_btn['state'] = tk.NORMAL
-                accepted_branch_btn['state'] = tk.NORMAL
+
+
+            if num_of_branches != 0:
+                steps_btn['state'] = tk.NORMAL
+                for item in output_gui[accepted_branch_num]:
+                    list_len += 1
+
+                label.config(text="Final String and State = "+ str(final_result) + " (ACCEPTED)", fg="#008000")
+                if branch_num <= 1:
+                    is_last_branch = True
             else:
-                is_last_branch = True
+                label.config(
+                    text="Final String and State = λ" + " (ACCEPTED)",
+                    fg="#008000")
         else:
             label.config(
                 text="REJECTED",
@@ -266,13 +319,21 @@ def display_steps():
 
         head_label.config(text=output_head_list[branch_counter][turn_num])
         label.config(text=output_gui[branch_counter][turn_num], fg="#000000")
-        turn_num += 1
+
+        if is_last_branch == False:
+            next_branch_btn['state'] = tk.NORMAL
+            accepted_branch_btn['state'] = tk.NORMAL
 
         for item in output_gui[branch_counter]:
             list_len += 1
 
+        if turn_num > list_len - 3:
+            turn_num += 1
+        else:
+            turn_num += 2
+
         if turn_num == list_len:
-            if is_last_branch == True:
+            if branch_counter == accepted_branch_num:
                 label.config(text=output_gui[branch_counter][turn_num-1], fg="#008000")
 
             steps_btn['state'] = tk.DISABLED
@@ -282,13 +343,15 @@ def display_steps():
 
 
 def reset():
-    global turn_num, output_gui, output_head_list, curr_head, branch_counter,branch_num, is_last_branch
+    global turn_num, output_gui, output_head_list, curr_head, branch_counter,branch_num, is_last_branch, final_state, accepted_branch_num
     turn_num = 0
     branch_counter = 0
     branch_num = 0
     output_gui = []
     output_head_list = []
     curr_head = 0
+    final_state = ""
+    accepted_branch_num = 0
     is_last_branch = False
     label.config(text="", fg="#000000")
     head_label.config(text="", fg="#000000")
@@ -307,7 +370,9 @@ def next_branch():
     steps_btn['state'] = tk.NORMAL
 
     head_label.config(text=output_head_list[branch_counter][turn_num])
-    label.config(text=output_gui[branch_counter][turn_num])
+    label.config(text=output_gui[branch_counter][turn_num], fg="#000000")
+
+    turn_num += 1
 
     for item in output_gui:
         if item != []:
@@ -323,19 +388,15 @@ def accepted_branch():
     num_of_branches = 0
     is_last_branch = True
 
-    for item in output_gui:
-        if item != []:
-            num_of_branches += 1
 
-
-    branch_counter = num_of_branches - 1
+    branch_counter = accepted_branch_num
     turn_num = 0
     steps_btn['state'] = tk.NORMAL
     next_branch_btn['state'] = tk.DISABLED
     accepted_branch_btn['state'] = tk.DISABLED
 
-    head_label.config(text=output_head_list[branch_counter][turn_num])
-    label.config(text=output_gui[branch_counter][turn_num])
+    head_label.config(text=output_head_list[accepted_branch_num][turn_num])
+    label.config(text=output_gui[accepted_branch_num][turn_num])
 
 
 def browseFiles():
