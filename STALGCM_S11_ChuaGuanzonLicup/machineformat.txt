@@ -1,0 +1,21 @@
+% Machine Format for Chua, Guanzon, & Licup's Program
+
+q0 q1 #
+q0,1,q0,1 R
+q0,0,q0,# R
+q0,#,q1,# S
+
+
+% FORMAT OF MACHINE DEFINITION
+
+% 1. Every '%' represents the start of a comment
+
+% 2. For the instructions, the symbol "\\" represents a space
+
+% 3. First line of machine definition file must contain (separated with a space): <start state>\\<final state>\\<blank symbol>
+
+% 4. After the first line, place the transitions of the machine. Transitions are of the following format:
+
+% <current state>,<current input>,<new state>,<write symbol>\\<direction>
+
+% 5. The machine stored in this file is the same as the pre-built machine of the program

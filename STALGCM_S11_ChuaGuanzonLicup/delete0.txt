@@ -1,0 +1,16 @@
+% Sample Machine for Chua, Guanzon, & Licup's Program
+% A nondeterministic machine that accepts strings of the language L = {w = {0,1}* | w = {0 U 1}*}, which deletes all 0's from a string
+
+% HEADER
+q0 q2 #
+% TRANSITIONS
+q0,1,q0,1 R
+q0,0,q0,# R
+q0,#,q2,# S
+q0,1,q1,1 R
+q1,1,q1,1 R
+q1,0,q1,0 R
+q1,#,q3,# L
+q3,1,q3,1 L
+q3,0,q3,# L
+q3,#,q2,# S
